@@ -4,6 +4,7 @@
 4. 如果需要寫一個 Excel 公式的建議，可以參考：https://chatgpt.com/share/67f14145-d8d4-8009-94be-264559b8baba 其中上傳的資料是...
 5. 如果需要寫一個描述操作的公式的建議，可以參考：https://chatgpt.com/share/67f15384-ba18-8009-a287-49ad2a179f8f
 6. 第五個練習的原始資料檔案在：https://github.com/Chetana2403/nutrition-dataset/blob/main/nutrition_dataset.csv
+7. 最後可以把過程做成 presentation, through Gamma：https://gamma.app/docs/-7l7j9uiilc28ssx?mode=doc 這裡其實是將 gemini 的一些回應與動作輸送給 chatgpt 由 chatgpt 產出 slide's outline...
 
 檔案：
 1. EXECLxAI/1.1.訂單客戶退貨資料.xlsx：由前一段 item 2 所產生的客戶訂單資料
