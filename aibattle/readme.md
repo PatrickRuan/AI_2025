@@ -1,7 +1,28 @@
 aibattle at x
-1. cyberpunk city: "請模擬夜晚霓虹燈照亮的賽博龐克城市景觀，帶著動畫燈光合物，所有內容都在一個HTML文件中
-給我這個 HTML 檔，讓我下載。" ==> cyberpunk_city.html ＠o4_mini
-2. pokemon: "Design a visually captivating battle screen inspired by classic Pokémon games, using real-time data from the PokéAPI to display stats, sprites, and battle options. 請用 html，同時提供檔案讓我下載。同時告訴我如何操作"  @ gemini 2.5 pro:
+
+0. BASIC ChatGPT: https://chatgpt.com/share/68061d4d-1b8c-8009-be27-2ad9760cb7b4
+1. cyberpunk_city.html
+cyberpunk city: "請模擬夜晚霓虹燈照亮的賽博龐克城市景觀，帶著動畫燈光合物，所有內容都在一個HTML文件中
+給我這個 HTML 檔，讓我下載。" ==> cyberpunk_city.html ＠o4_mini, 其他有 chatgpt 4o, 4.1
+
+2. good_game_square_4o.ipynb
+   rotation_balls:
+   "Write a Python program using Pygame (or another suitable library) that simulates a few realistically bouncing balls affected by gravity inside a square that rotates around its center. The balls should respond to collisions with the rotating square's walls, maintaining physical realism with velocity changes, gravity effects, and rotation-aware collision detection."
+   簡單版：“Write a Python program that simulates realistically bouncing balls and other objects affected by gravity inside a square”
+   ==> good_game_square_4o.ipynb
+   
+3. good_game_square_controllable4o.ipynb
+    繼承 2. : "我想加入以下功能：
+    按右鍵，中間的匡會順時鐘旋轉
+    按右鍵，中間的匡會逆時鐘旋轉
+    按上鍵，會在中間框的中間點產生新的球
+    按下鍵，會隨機選一個球消失。" ==> good_game_square_controllable4o.ipynb
+   
+4. maze.html: “Create a visually stunning procedurally generated maze and beautifully solve it, in one html file” @ chatgpt 4o
+   
+5. cinestream_frontend_4o.html: "Create a breathtaking Movie streaming site front-end, in one html file" @ chatgpt 4o
+   
+6. pokemon: "Design a visually captivating battle screen inspired by classic Pokémon games, using real-time data from the PokéAPI to display stats, sprites, and battle options. 請用 html，同時提供檔案讓我下載。同時告訴我如何操作"  @ gemini 2.5 pro:
 如何操作 (How to Operate):
 
 下載檔案 (Download Files):
