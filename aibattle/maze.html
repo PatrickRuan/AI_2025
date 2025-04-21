@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Procedural Maze Generator &amp; Solver</title>
+<style>
+  body { margin:0; background:#111; display:flex; justify-content:center; align-items:center; height:100vh;}
+  canvas { box-shadow:0 0 20px #0ff; }
+  #overlay { position:fixed; top:10px; left:10px; color:#0ff; font-family:monospace; }
+</style>
+</head>
+<body>
+<div id="overlay">Generating...</div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<script>
+let cols, rows;
+let w = 20;               // 每格像素—數字越小迷宮越大
+let grid = [];
+let current;
+let stack = [];
+let path = [];
+let solving = false;
+let solved = false;
+let overlay;
+
+function setup(){
+   overlay = document.getElementById('overlay');
+   const c = createCanvas(window.innerWidth*0.9, window.innerHeight*0.9);
+   c.parent(document.body);
+   frameRate(60);
+   cols = floor(width / w);
+   rows = floor(height / w);
+   for (let j=0;j<rows;j++){
+     for (let i=0;i<cols;i++){
+       grid.push(new Cell(i,j));
+     }
+   }
+   current = grid[0];
+}
+
+function index(i,j){
+  if (i<0||j<0||i>=cols||j>=rows) return -1;
+  return i + j*cols;
+}
+
+function draw(){
+  background(20);
+  grid.forEach(c => c.show());
+
+  current.visited = true;
+  current.highlight();
+
+  // 生成階段
+  const next = current.checkNeighbors();
+  if (next){
+    next.visited = true;
+    stack.push(current);
+    removeWalls(current,next);
+    current = next;
+  } else if (stack.length) {
+    current = stack.pop();
+  } else if (!solving) {      // 生成完→開始解迷宮
+    solving = true;
+    overlay.textContent = "Solving...";
+    path = solveMaze();
+  } else if (solved) {
+    overlay.textContent = "Done!";
+  }
+
+  // 解迷宮動畫
+  if (solving && path.length){
+    path.shift().inPath = true;
+    if (!path.length) solved = true;
+  }
+}
+
+function Cell(i,j){
+  this.i = i; this.j = j;
+  this.walls = [true,true,true,true]; // 上右下左
+  this.visited = false;
+  this.inPath = false;
+
+  this.checkNeighbors = () => {
+     const neighbors = [
+       grid[index(i, j-1)],
+       grid[index(i+1,j)],
+       grid[index(i, j+1)],
+       grid[index(i-1,j)]
+     ].filter(n => n && !n.visited);
+     return neighbors.length ? random(neighbors) : undefined;
+  };
+
+  this.show = () => {
+     const x = this.i * w, y = this.j * w;
+     stroke(0,255,255);
+     if (this.walls[0]) line(x,y,x+w,y);
+     if (this.walls[1]) line(x+w,y,x+w,y+w);
+     if (this.walls[2]) line(x+w,y+w,x,y+w);
+     if (this.walls[3]) line(x,y+w,x,y);
+     if (this.visited){
+       noStroke(); fill(0,50); rect(x,y,w,w);
+     }
+     if (this.inPath){
+       noStroke(); fill(255,0,128,150); rect(x,y,w,w);
+     }
+  };
+
+  this.highlight = () => {
+     noStroke(); fill(0,255,255,120);
+     rect(this.i*w, this.j*w, w, w);
+  };
+}
+
+function removeWalls(a,b){
+  const dx = a.i - b.i, dy = a.j - b.j;
+  if (dx ===  1){ a.walls[3] = b.walls[1] = false; }
+  if (dx === -1){ a.walls[1] = b.walls[3] = false; }
+  if (dy ===  1){ a.walls[0] = b.walls[2] = false; }
+  if (dy === -1){ a.walls[2] = b.walls[0] = false; }
+}
+
+// 深度優先搜尋求解
+function solveMaze(){
+   const start = grid[0], end = grid[grid.length-1];
+   const stack = [[start]], visited = new Set([start]);
+   while (stack.length){
+     const route = stack.pop(), cell = route.at(-1);
+     if (cell === end) return route;
+     [[0,-1,0],[1,0,1],[0,1,2],[-1,0,3]].forEach(([dx,dy,wall])=>{
+        if (!cell.walls[wall]){
+           const n = grid[index(cell.i+dx, cell.j+dy)];
+           if (n && !visited.has(n)){
+             visited.add(n); stack.push([...route,n]);
+           }
+        }
+     });
+   }
+   return [];
+}
+
+function windowResized(){ resizeCanvas(window.innerWidth*0.9, window.innerHeight*0.9); }
+</script>
+</body>
+</html>
