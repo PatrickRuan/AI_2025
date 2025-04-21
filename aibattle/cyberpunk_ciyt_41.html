@@ -1,0 +1,219 @@
+
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Neon-lit Cyberpunk Cityscape</title>
+  <style>
+    html, body {
+      margin: 0; padding: 0; overflow: hidden;
+      background: #080825;
+      width: 100vw; height: 100vh;
+    }
+    canvas {
+      display: block;
+      width: 100vw;
+      height: 100vh;
+      background: #080825;
+    }
+  </style>
+</head>
+<body>
+<canvas id="cyberCanvas"></canvas>
+<script>
+const canvas = document.getElementById('cyberCanvas');
+const ctx = canvas.getContext('2d');
+let w, h;
+function resize() {
+  w = window.innerWidth;
+  h = window.innerHeight;
+  canvas.width = w;
+  canvas.height = h;
+}
+window.addEventListener('resize', resize);
+resize();
+// prompt: Simulate a neon-lit cyberpunk cityscape at night, with animated lights and fog, all in one HTML file
+// Generate buildings: array of {x, width, height, color}
+const buildings = [];
+const buildingColors = [
+  "#1ff0ed", "#ff38fb", "#39ff14", "#f6ff38", "#f85322", "#3961ff"
+];
+const windowColors = [
+  "#19fff0", "#ff6cfb", "#bfff2a", "#ffff8b", "#ffc099", "#96ceff"
+];
+
+function generateBuildings() {
+  buildings.length = 0;
+  let x = 0;
+  while (x < w) {
+    let bw = 60+Math.random()*70;
+    let bh = h*0.25 + Math.random()*h*0.5;
+    let color = buildingColors[Math.floor(Math.random()*buildingColors.length)];
+    buildings.push({x: x, width: bw, height: bh, color});
+    x += bw*0.8+Math.random()*15;
+  }
+}
+
+// Neon sign: random rectangles/circles with glowing effect
+function drawNeonSign(x, y, s, color, shape='rect', anim=0) {
+  ctx.save();
+  ctx.globalAlpha = 0.72 + Math.sin(anim*2+ x/121 + y/71)*0.13;
+  ctx.shadowColor = color;
+  ctx.shadowBlur = 16 + Math.sin(anim*0.1+y/91)*18;
+  ctx.fillStyle = color;
+  if (shape === 'rect') {
+    ctx.fillRect(x, y, s*2, s);
+  } else if (shape === 'circle') {
+    ctx.beginPath();
+    ctx.arc(x+s, y+s, s, 0, 2*Math.PI);
+    ctx.fill();
+  } else if (shape === 'triangle') {
+    ctx.beginPath();
+    ctx.moveTo(x, y+s*2);
+    ctx.lineTo(x+s, y);
+    ctx.lineTo(x+s*2, y+s*2);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Windows: Small animated rectangles
+function drawWindows(b, anim) {
+  const winW = 8, winH = 14;
+  for(let y=h-b.height+18; y<h-18; y+=18) {
+    for(let x=b.x+8+Math.random()*2; x<b.x+b.width-18; x+=22){
+      if(Math.random() < 0.25) continue;
+      let flicker = 0.85+0.15*Math.sin(anim*2+(x+y));
+      ctx.save();
+      ctx.globalAlpha = flicker;
+      ctx.shadowColor = "#fff";
+      ctx.shadowBlur = 6+14*Math.random();
+      ctx.fillStyle = windowColors[Math.floor(Math.random()*windowColors.length)];
+      ctx.fillRect(x,y,winW,winH);
+      ctx.restore();
+    }
+  }
+}
+
+// Fog properties
+const fogLayers = [
+  {y: 0.42, opacity: 0.08, speed:0.11, color:"#8effff"},
+  {y: 0.66, opacity: 0.17, speed:0.07, color:"#ccccff"},
+  {y: 0.53, opacity: 0.12, speed:0.043, color:"#ffbbff"},
+];
+
+let lastResize = 0;
+generateBuildings();
+
+// Main animation loop
+function animate(t){
+  if(Date.now() - lastResize > 400) { // Less flicker after resize
+    if(buildings.length === 0 || w!=canvas.width || h!=canvas.height){
+      resize(); generateBuildings();
+    }
+  }
+  ctx.clearRect(0,0,w,h);
+
+  // Night sky with animated gradient
+  let grad = ctx.createLinearGradient(0,0,0,h*0.8);
+  grad.addColorStop(0,"#1a0736");
+  grad.addColorStop(0.3, "#282067");
+  grad.addColorStop(1, "#0a0938");
+  ctx.fillStyle = grad;
+  ctx.fillRect(0,0,w,h);
+
+  // Draw static buildings, from back to front
+  for(let i=0;i<buildings.length;i++){
+    let b = buildings[i];
+
+    // Glow behind buildings
+    ctx.save();
+    ctx.globalAlpha = 0.16;
+    ctx.shadowColor = b.color;
+    ctx.shadowBlur = 38;
+    ctx.fillStyle = "#000";
+    ctx.fillRect(b.x, h-b.height, b.width, b.height);
+    ctx.restore();
+
+    // Neon building edge
+    ctx.save();
+    ctx.strokeStyle = b.color;
+    ctx.shadowColor = b.color;
+    ctx.globalAlpha = 0.7;
+    ctx.shadowBlur = 14 + 12*Math.sin( t*0.002+ b.x/137 );
+    ctx.lineWidth = 4;
+    ctx.beginPath();
+    ctx.moveTo(b.x, h-b.height+2);
+    ctx.lineTo(b.x+b.width, h-b.height+2);
+    ctx.stroke();
+    ctx.restore();
+
+    // Building base fill
+    ctx.save();
+    ctx.globalAlpha = 0.77;
+    ctx.fillStyle = "#141426";
+    ctx.fillRect(b.x, h-b.height, b.width, b.height);
+    ctx.restore();
+
+    // Neon signs
+    for(let ni=0; ni<2+Math.random()*2; ni++){
+      let shapeR = Math.random();
+      let shape = shapeR < 0.6 ? 'rect' : (shapeR < 0.8 ? 'circle' : 'triangle');
+      let col = buildingColors[ (Math.floor(b.x/77) + ni)%buildingColors.length ];
+      let sx = b.x + 12 + Math.random()*(b.width-34);
+      let sy = h-b.height+16 + Math.random()*(b.height*0.44);
+      let size = 9+Math.random()*11;
+      drawNeonSign(sx, sy, size, col, shape, t*0.001);
+    }
+    // Windows
+    drawWindows(b, t*0.0026);
+  }
+
+  // Flying neon "vehicles"
+  for(let v=0;v<7;v++){
+    let vy = h*0.33+Math.sin(t*0.002+v)*h*0.22;
+    let vx = (t*0.11 + v*300)%w;
+    let col = buildingColors[v%buildingColors.length];
+    ctx.save();
+    ctx.globalAlpha = 0.74 + 0.2*Math.sin(t*0.009+v);
+    ctx.shadowColor = col;
+    ctx.shadowBlur = 16+12*Math.sin(vx/110);
+    ctx.fillStyle = col;
+    ctx.fillRect(vx, vy, 40, 6);
+    ctx.restore();
+  }
+
+  // Fog overlays
+  for(let f=0; f<fogLayers.length; f++){
+    let layer = fogLayers[f];
+    let fy = h*layer.y + 10*Math.sin(t*0.001+f*2);
+    ctx.save();
+    ctx.globalAlpha = layer.opacity;
+    ctx.filter = "blur(27px)";
+    ctx.fillStyle = layer.color;
+    for(let f2=0; f2<5; f2++) {
+      let offset = (t*layer.speed + f2*120) % w;
+      ctx.beginPath();
+      ctx.ellipse(offset, fy+f2*30, w*0.41, 64+f2*19, 0, 0, Math.PI*2);
+      ctx.fill();
+    }
+    ctx.filter = "none";
+    ctx.restore();
+  }
+
+  // Occasional flickering haze over foreground
+  if(Math.random()>0.85){
+    ctx.save();
+    ctx.globalAlpha = 0.06+0.04*Math.random();
+    ctx.fillStyle = "#e896ff";
+    ctx.fillRect(0,h*0.82,w,h*0.18);
+    ctx.restore();
+  }
+
+  requestAnimationFrame(animate);
+}
+
+animate(0);
+</script>
+</body>
+</html>

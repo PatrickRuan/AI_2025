@@ -1,0 +1,156 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>CineStream - Your Movie Universe</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: 'Segoe UI', sans-serif;
+      background-color: #0d0d0d;
+      color: white;
+    }
+
+    header {
+      background: linear-gradient(90deg, #ff416c, #ff4b2b);
+      padding: 1rem 2rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h1 {
+      margin: 0;
+      font-size: 1.8rem;
+    }
+
+    nav a {
+      color: white;
+      margin-left: 1.5rem;
+      text-decoration: none;
+      font-weight: bold;
+    }
+
+    .hero {
+      background-image: url('https://images.unsplash.com/photo-1606813905040-5188ae8ae44b?auto=format&fit=crop&w=1400&q=80');
+      background-size: cover;
+      background-position: center;
+      height: 70vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    .hero h2 {
+      font-size: 3rem;
+      background: rgba(0,0,0,0.6);
+      padding: 1rem 2rem;
+      border-radius: 10px;
+    }
+
+    .section {
+      padding: 2rem;
+    }
+
+    .section h3 {
+      margin-bottom: 1rem;
+    }
+
+    .movie-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 1rem;
+    }
+
+    .movie-card {
+      background-color: #1a1a1a;
+      border-radius: 10px;
+      overflow: hidden;
+      transition: transform 0.3s;
+    }
+
+    .movie-card:hover {
+      transform: scale(1.05);
+    }
+
+    .movie-card img {
+      width: 100%;
+      height: 270px;
+      object-fit: cover;
+    }
+
+    .movie-card .info {
+      padding: 0.5rem;
+    }
+
+    .movie-card .info h4 {
+      margin: 0.3rem 0;
+      font-size: 1.1rem;
+    }
+
+    footer {
+      text-align: center;
+      padding: 2rem;
+      background-color: #111;
+      font-size: 0.9rem;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>CineStream</h1>
+    <nav>
+      <a href="#">Home</a>
+      <a href="#">Popular</a>
+      <a href="#">New Releases</a>
+      <a href="#">Genres</a>
+    </nav>
+  </header>
+
+  <section class="hero">
+    <h2>Stream the Latest Movies Anytime, Anywhere</h2>
+  </section>
+
+  <section class="section">
+    <h3>🔥 Popular Right Now</h3>
+    <div class="movie-grid">
+      <div class="movie-card">
+        <img src="https://image.tmdb.org/t/p/w500/8YFL5QQVPy3AgrEQxNYVSgiPEbe.jpg" alt="Movie Poster"/>
+        <div class="info">
+          <h4>Spider-Man: No Way Home</h4>
+          <p>Action, Sci-Fi</p>
+        </div>
+      </div>
+      <div class="movie-card">
+        <img src="https://image.tmdb.org/t/p/w500/xmbU4JTUm8rsdtn7Y3Fcm30GpeT.jpg" alt="Movie Poster"/>
+        <div class="info">
+          <h4>Top Gun: Maverick</h4>
+          <p>Action, Drama</p>
+        </div>
+      </div>
+      <div class="movie-card">
+        <img src="https://image.tmdb.org/t/p/w500/aEGiJJP91HsKVTEPy1HhmN0wRLm.jpg" alt="Movie Poster"/>
+        <div class="info">
+          <h4>Avatar: The Way of Water</h4>
+          <p>Adventure, Sci-Fi</p>
+        </div>
+      </div>
+      <div class="movie-card">
+        <img src="https://image.tmdb.org/t/p/w500/kGrWZB0NyTnJdG6YNOkymF3zS4A.jpg" alt="Movie Poster"/>
+        <div class="info">
+          <h4>Everything Everywhere All at Once</h4>
+          <p>Comedy, Sci-Fi</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    © 2025 CineStream. All rights reserved.
+  </footer>
+</body>
+</html>

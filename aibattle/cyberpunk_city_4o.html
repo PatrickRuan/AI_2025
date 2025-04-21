@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>賽博龐克城市夜景 - p5.js</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: black;
+    }
+    canvas {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+<script>
+let buildings = [];
+
+function setup() {
+  createCanvas(windowWidth, windowHeight);
+  noStroke();
+
+  // 產生建築群
+  for (let i = 0; i < 30; i++) {
+    let w = random(40, 80);
+    let h = random(height * 0.2, height * 0.6);
+    let x = i * w + random(-10, 10);
+    buildings.push({x: x, w: w, h: h, c: color(random(50, 255), random(100, 255), 255)});
+  }
+
+  textFont('Orbitron');
+}
+
+function draw() {
+  background(10, 10, 30);
+
+  // 星空
+  for (let i = 0; i < 150; i++) {
+    fill(255, 255, 255, random(50, 150));
+    ellipse(random(width), random(height * 0.6), random(0.5, 2));
+  }
+
+  // 地平線霧光
+  for (let i = 0; i < 100; i++) {
+    fill(0, 255, 255, 3);
+    ellipse(width / 2, height, i * 20, 40);
+  }
+
+  // 建築
+  for (let b of buildings) {
+    fill(20);
+    rect(b.x, height - b.h, b.w, b.h);
+
+    // 燈光點點
+    for (let j = 5; j < b.h; j += 15) {
+      if (random() < 0.5) {
+        fill(b.c.levels[0], b.c.levels[1], b.c.levels[2], random(100, 200));
+        rect(b.x + 5, height - j, 6, 6);
+      }
+    }
+  }
+
+  // 霓虹標語
+  drawNeonText("NEON ZONE", width / 2 - 160, height * 0.3, color(0, 255, 255));
+  drawNeonText("chatgpt 4o", width / 2 - 80, height * 0.4, color(255, 0, 255));
+}
+
+function drawNeonText(txt, x, y, glowColor) {
+  fill(glowColor);
+  textSize(48);
+  for (let i = 5; i > 0; i--) {
+    fill(red(glowColor), green(glowColor), blue(glowColor), 25);
+    textSize(48 + i);
+    text(txt, x, y);
+  }
+  fill(glowColor);
+  textSize(48);
+  text(txt, x, y);
+}
+
+function windowResized() {
+  resizeCanvas(windowWidth, windowHeight);
+}
+</script>
+</body>
+</html>
