@@ -1,0 +1,206 @@
+/* 基本設定與字體 */
+body {
+    background-color: #f0f0f0; /* 淺灰色背景 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Press Start 2P', cursive; /* 像素風格字體 */
+    font-size: 14px; /* 調整基礎字體大小 */
+    color: #333; /* 深灰色文字 */
+}
+
+/* 主要戰鬥畫面容器 */
+#battle-screen {
+    width: 640px; /* 模擬舊螢幕寬度 */
+    height: 480px; /* 模擬舊螢幕高度 */
+    background-color: #d8f8b8; /* 經典的淺綠色背景 */
+    border: 8px solid #585858; /* 深灰色邊框 */
+    position: relative; /* 作為內部絕對定位的基準 */
+    overflow: hidden; /* 隱藏超出範圍的內容 */
+    image-rendering: pixelated; /* 使圖片像素化，保持經典風格 */
+    image-rendering: -moz-crisp-edges;
+    image-rendering: crisp-edges;
+}
+
+/* 寶可夢顯示區域通用樣式 */
+.pokemon-area {
+    position: absolute;
+}
+
+/* 對手區域 */
+.opponent-area {
+    top: 40px;
+    right: 40px;
+    display: flex;
+    align-items: flex-end; /* 狀態框在精靈圖下方 */
+    flex-direction: column; /* 狀態框在上方 */
+}
+
+/* 玩家區域 */
+.player-area {
+    bottom: 140px; /* 為下方訊息框留出空間 */
+    left: 40px;
+    display: flex;
+    align-items: flex-start; /* 狀態框在精靈圖上方 */
+    flex-direction: column-reverse; /* 狀態框在下方 */
+}
+
+
+/* 狀態框 */
+.status-box {
+    background-color: #f8f8f8; /* 白色背景 */
+    border: 4px solid #585858; /* 深灰色邊框 */
+    border-radius: 8px; /* 輕微圓角 */
+    padding: 10px;
+    min-width: 200px; /* 最小寬度 */
+    box-shadow: 4px 4px 0px rgba(0,0,0,0.2); /* 輕微陰影 */
+}
+
+.info-line {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 5px;
+}
+
+.name {
+    font-weight: bold;
+}
+
+.level {
+    font-size: 0.9em;
+}
+
+.hp-label {
+    font-size: 0.8em;
+    font-weight: bold;
+    margin-right: 5px;
+    color: darkred;
+}
+
+.hp-bar-container {
+    background-color: #b0b0b0; /* HP 底色 */
+    border: 2px solid #585858;
+    height: 10px;
+    width: 100%;
+    margin-top: 5px;
+    margin-bottom: 5px; /* 與 HP 數字間距 */
+    display: flex; /* 讓 HP 標籤和 Bar 對齊 */
+    align-items: center;
+    padding: 2px; /* 內邊距讓 Bar 看起來更細 */
+    box-sizing: border-box;
+}
+
+.hp-bar {
+    height: 100%;
+    background-color: #32cd32; /* 預設綠色 */
+    transition: width 0.5s ease-out, background-color 0.5s ease; /* 過渡效果 */
+    width: 100%; /* 預設滿血 */
+}
+
+.hp-text {
+    text-align: right;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+
+/* 寶可夢圖片 */
+.pokemon-sprite {
+    width: 128px; /* 調整圖片大小 */
+    height: 128px;
+    object-fit: contain; /* 保持圖片比例 */
+    margin: 10px;
+    /* image-rendering 已在 battle-screen 設定 */
+}
+
+/* 讓玩家圖片在狀態框左邊 */
+.player-area .pokemon-sprite {
+    align-self: flex-end; /* 圖片靠右 */
+    margin-left: 0;
+    margin-right: 10px; /* 與狀態框的間距 */
+    margin-bottom: -20px; /* 稍微向上移動一點 */
+    order: -1; /* 將圖片顯示在狀態框的左邊 */
+}
+/* 調整玩家狀態框位置 */
+.player-area .status-box {
+     align-self: flex-start; /* 狀態框靠左 */
+     margin-right: 0;
+     margin-left: 10px;
+}
+
+/* 訊息與選項框 */
+#message-box {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 120px; /* 高度 */
+    background-color: #f8f8f8; /* 白色背景 */
+    border-top: 8px solid #585858; /* 上方粗邊框 */
+    box-sizing: border-box; /* 邊框計入寬高 */
+    display: flex;
+    align-items: center; /* 垂直居中 */
+}
+
+#battle-message {
+    padding: 15px;
+    margin: 0;
+    flex-grow: 1; /* 佔據剩餘空間 */
+    line-height: 1.5; /* 行高 */
+}
+
+#options-box {
+    border-left: 8px solid #585858; /* 左邊框分隔 */
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 兩列 */
+    gap: 10px; /* 按鈕間距 */
+    height: 100%;
+    box-sizing: border-box;
+    align-content: center; /* 垂直居中 */
+}
+
+.option-button {
+    font-family: 'Press Start 2P', cursive;
+    font-size: 14px;
+    background-color: #e0e0e0; /* 灰色按鈕 */
+    border: 2px solid #585858;
+    padding: 8px 12px;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 2px 2px 0px rgba(0,0,0,0.2);
+    transition: background-color 0.2s;
+}
+
+.option-button:hover {
+    background-color: #c0c0c0; /* 滑鼠懸停變色 */
+}
+
+.option-button:active {
+    box-shadow: none; /* 按下時移除陰影 */
+    transform: translate(2px, 2px); /* 按下效果 */
+}
+
+/* 招式選項框 (預設隱藏) */
+#fight-options-box {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: calc(100% - 8px); /* 調整寬度以適應邊框 */
+    height: 120px;
+    background-color: #f8f8f8;
+    border-top: 8px solid #585858;
+    box-sizing: border-box;
+    padding: 10px;
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 兩列 */
+    gap: 10px;
+    align-content: center; /* 垂直居中 */
+    margin-left: 4px; /* 微調對齊 */
+}
+
+.hidden {
+    display: none !important; /* 強制隱藏 */
+}

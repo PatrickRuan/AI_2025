@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pokémon Battle Screen</title>
+    <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div id="battle-screen">
+        <div class="pokemon-area opponent-area">
+            <div class="status-box" id="opponent-status">
+                <div class="info-line">
+                    <span class="name" id="opponent-name">對手名稱</span>
+                    <span class="level">Lv.50</span> </div>
+                <div class="hp-bar-container">
+                    <span class="hp-label">HP:</span>
+                    <div class="hp-bar" id="opponent-hp-bar"></div>
+                </div>
+                 <div class="hp-text" id="opponent-hp-text">??/??</div>
+            </div>
+            <img src="" alt="Opponent Pokémon" id="opponent-sprite" class="pokemon-sprite">
+        </div>
+
+        <div class="pokemon-area player-area">
+             <img src="" alt="Player Pokémon" id="player-sprite" class="pokemon-sprite">
+            <div class="status-box" id="player-status">
+                 <div class="info-line">
+                    <span class="name" id="player-name">玩家名稱</span>
+                    <span class="level">Lv.50</span> </div>
+                <div class="hp-bar-container">
+                     <span class="hp-label">HP:</span>
+                    <div class="hp-bar" id="player-hp-bar"></div>
+                </div>
+                 <div class="hp-text" id="player-hp-text">??/??</div>
+            </div>
+        </div>
+
+        <div id="message-box">
+            <p id="battle-message">戰鬥開始！</p>
+            <div id="options-box">
+                <button class="option-button" id="fight-button">戰鬥</button>
+                <button class="option-button" id="bag-button">包包</button>
+                <button class="option-button" id="pokemon-button">寶可夢</button>
+                <button class="option-button" id="run-button">逃跑</button>
+            </div>
+             <div id="fight-options-box" class="hidden">
+                </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
