@@ -26,5 +26,5 @@ def send_task(agent_info, message_text):
 if __name__ == '__main__':
     agent_info = discover_agent()
     print(f"Discovered agent: {agent_info['name']}")
-    response = send_task(agent_info, "Hello, Agent!")
+    response = send_task(agent_info, "中大的同學好!")
     print(f"Agent response: {response['message']['parts'][0]['text']}")
