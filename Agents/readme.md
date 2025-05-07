@@ -1,3 +1,5 @@
+1. A2A, agent to agent
+
 @terminal
 execute: 
 python server_agent.py
@@ -10,3 +12,12 @@ Raw response text: {"capabilities":["echo"],"description":"An agent that echoes 
 
 Discovered agent: EchoAgent
 Agent response: Echo: Hello, Agent!
+
+======================================================
+
+2. MCP, model context protocol:
+terminal 1: python server_mcp.py
+terminal 2: python client_mcp.py server_mcp.py
+
+
+
