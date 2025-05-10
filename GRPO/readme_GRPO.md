@@ -14,6 +14,7 @@
 透過 localhost:11434 呼叫模型
 
 會有 程式 3. 
+0.Llama3_2_(3B)_GRPO_ollama.ipynb
 主要是整合 程式 1 與 程式 2
 中間直接生成 .gguf 檔案，所以後半部不需要 llama.cpp 與 convert_hf_to_gguf.py 的使用。
 但是目前 colab 跑不完。
