@@ -17,8 +17,11 @@ Agent response: Echo: Hello, Agent!
 ======================================================
 
 2. MCP, model context protocol:
+
 需要先安裝 fastmcp: pip install fastmcp
+
 terminal 1: python server_mcp.py
+
 terminal 2: python client_mcp.py server_mcp.py
 
 
