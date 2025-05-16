@@ -1,10 +1,11 @@
 1. A2A, agent to agent
 
-@terminal
+@terminal 1
 execute: 
 python server_agent.py
 
-then, execute:
+then, 
+@terminal 2, execute:
 python client_agent.py
 
 get:
@@ -16,6 +17,7 @@ Agent response: Echo: Hello, Agent!
 ======================================================
 
 2. MCP, model context protocol:
+需要先安裝 fastmcp: pip install fastmcp
 terminal 1: python server_mcp.py
 terminal 2: python client_mcp.py server_mcp.py
 
