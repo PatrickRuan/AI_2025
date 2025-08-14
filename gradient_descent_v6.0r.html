@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>人肉 Gradient Descent v5.2（預設 20 Epochs / Cosine+Floor LR / Auto 連鎖步進）</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, -apple-system, "Noto Sans TC", "Microsoft JhengHei", sans-serif; padding: 24px; background: #f9f9f9; }
+    h2 { margin: 0 0 12px; }
+    table { border-collapse: collapse; margin-bottom: 12px;}
+    th, td { border: 1px solid #ccc; padding: 6px 8px; text-align: center; }
+    input[type="number"] { width: 90px; font-size: 14px; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .gray { color: #777; }
+    .epoch-block { border:2px solid #bbb; padding:12px; margin-bottom:18px; background:#fff; border-radius: 10px; }
+    .step-row td { background: #f6f7fa; }
+    .section-title { margin: 16px 0 8px; font-weight: 700; }
+    .delta-pos { color:#0a8a00; }  /* ΔErr < 0 → 變好(綠) */
+    .delta-neg { color:#cc0000; }  /* ΔErr > 0 → 變差(紅) */
+    .delta-zero{ color:#999; }
+    .panel { display:flex; gap:16px; align-items:center; flex-wrap: wrap; margin-bottom: 12px; }
+    .panel > div { background:#fff; border:1px solid #ddd; border-radius: 10px; padding:10px 12px; }
+    .lrbox { min-width: 280px; }
+    .small { font-size: 12px; }
+    .btn { padding: 6px 10px; border: 1px solid #444; background: #fff; border-radius: 6px; cursor: pointer; }
+    .btn:disabled { opacity:.5; cursor:not-allowed; }
+    .final { margin-top: 18px; padding: 12px; background: #fff; border:1px solid #ddd; border-radius: 10px; }
+
+    /* 使用說明卡片 */
+    .tips { background:#fff; border:1px dashed #bbb; border-radius:10px; padding:10px 12px; margin:8px 0 16px; }
+    .tips ul { margin:0; padding-left:18px; }
+    .tips li { margin:4px 0; line-height:1.35; }
+    .tips b { color:#333; }
+  </style>
+</head>
+<body>
+  <h2>人肉 Gradient Descent ver.5.2</h2>
+
+  <!-- 簡短使用說明 -->
+  <div class="tips">
+    <ul>
+      <li><b>觀察 → 修正：</b>看各參數的 ΔErr（變好為綠），讀出誤差方向，決定下一次猜測。</li>
+      <li><b>套用／送出：</b>「套用自動建議」會把系統建議值填入欄位；按「送出」才會成為下一輪起始參數。</li>
+      <li><b>卡住時：</b>若套用後參數幾乎不動或誤差下降很少，依梯度下降精神，<u>手動放大步幅</u>再送出，爭取更大的 loss 下降。</li>
+    </ul>
+  </div>
+
+  <!-- 控制面板 -->
+  <div class="panel">
+    <div>
+      <div class="small gray">Epoch 數（更改將重置實驗）</div>
+      <!-- v5.2: 預設 20，max 放寬到 50 -->
+      <input id="epochsInput" type="number" min="3" max="50" step="1" value="20" />
+      <button class="btn" id="applyEpochsBtn">套用並重置</button>
+    </div>
+    <div>
+      <div class="small gray">初始猜測（可改）</div>
+      <label>王子麵 <input id="initN" type="number" step="0.5" min="1" max="100" value="16"></label>
+      <label>香皂 <input id="initS" type="number" step="0.5" min="1" max="100" value="11"></label>
+      <label>塑膠袋 <input id="initB" type="number" step="0.5" min="1" max="10"  value="6"></label>
+      <button class="btn" id="applyInitBtn">以此重置</button>
+    </div>
+    <div class="lrbox">
+      <div class="small gray">Cosine Learning Rate（η = η_min + (η_max−η_min)·cosθ）</div>
+      <div id="lrList" class="mono small"></div>
+    </div>
+    <div>
+      <button class="btn" id="resetBtn">重置實驗（重新抽真值）</button>
+    </div>
+  </div>
+
+  <!-- 九筆資料 -->
+  <div>
+    <div class="section-title">全聯購買資料（9 筆）</div>
+    <table>
+      <thead>
+        <tr><th>#</th><th>王子麵數</th><th>香皂數</th><th>總價 (元)</th></tr>
+      </thead>
+      <tbody id="dataTable"></tbody>
+    </table>
+  </div>
+
+  <!-- 每個 epoch -->
+  <div id="epochContainer"></div>
+
+  <!-- 決策區 -->
+  <div id="decisionInputs"></div>
+
+  <!-- 最終答案 -->
+  <div id="finalAns" class="final"></div>
+
+  <script>
+    // ====== v5.2 參數 ======
+    const STEP = 0.5;
+    const N_MIN = 1, N_MAX = 100;
+    const S_MIN = 1, S_MAX = 100;
+    const B_MIN = 1, B_MAX = 10;
+
+    // Cosine with floor（與 v5.1 相同）
+    const ETA_MAX = 1.0;
+    const ETA_MIN = 0.25;    // 學習率下限
+    const ALPHA   = 1.0;     // Auto 建議縮放
+
+    // 動態最大格數：前半程 8，後半程 4（依 epoch 自動切換）
+    function maxUnitsForEpoch(e, total){
+      return (e <= Math.ceil(total/2) ? 8 : 4);
+    }
+
+    // ====== 狀態 ======
+    // v5.2: 預設 epochs 改為 20
+    let epochs = 20;
+    let decisionStep = 0;
+    let epochParams = [];
+    let userDecisions = [];
+    let records = [];
+    let truth = { noodle: 0, soap: 0, bag: 0 };
+
+    // ====== 工具 ======
+    function randGaussian(mean, std, min, max, step) {
+      let u=0,v=0; while(u===0) u=Math.random(); while(v===0) v=Math.random();
+      const num = Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);
+      let val = Math.round((mean + std*num)/step)*step;
+      return Math.max(min, Math.min(max, val));
+    }
+    function snapToGridAndClamp(x, min, max){
+      let v = Math.round(x/STEP)*STEP;
+      if(v < min) v = min;
+      if(v > max) v = max;
+      return +v.toFixed(2);
+    }
+    function mae(n, s, b){
+      const N = records.length;
+      let sum = 0;
+      for(const r of records){
+        const yhat = r.noodle*n + r.soap*s + b;
+        sum += Math.abs(r.total - yhat);
+      }
+      return sum / N;
+    }
+
+    // Cosine LR with floor（會依 epochs 自動展開）
+    function lrAtEpoch(e, total){
+      const theta = ((e-1)/(total-1)) * (Math.PI/2);   // [0, π/2]
+      return ETA_MIN + (ETA_MAX - ETA_MIN) * Math.cos(theta);
+    }
+    function buildLRList(){
+      const arr = [];
+      for(let e=1; e<=epochs; e++){
+        arr.push(+lrAtEpoch(e, epochs).toFixed(4));
+      }
+      return arr;
+    }
+
+    // ====== 初始化 / 重置 ======
+    function genTruth(){
+      const tN = randGaussian(20, 20, N_MIN, N_MAX, STEP);
+      const tS = randGaussian(20, 20, S_MIN, S_MAX, STEP);
+      const tB = randGaussian(5,  5,  B_MIN, B_MAX,  STEP);
+      return { noodle: tN, soap: tS, bag: tB };
+    }
+    function genRecords(){
+      const bases = [
+        {noodle:3, soap:1},{noodle:2, soap:2},{noodle:3, soap:2},
+        {noodle:5, soap:1},{noodle:3, soap:1},{noodle:2, soap:2},
+        {noodle:4, soap:2},{noodle:2, soap:1},{noodle:5, soap:2}
+      ];
+      return bases.map(it => ({
+        ...it,
+        total: it.noodle*truth.noodle + it.soap*truth.soap + truth.bag
+      }));
+    }
+    function resetExperiment(useInitFromUI=false){
+      truth = genTruth();
+      let initN = 16, initS = 11, initB = 6;
+      if(useInitFromUI){
+        initN = snapToGridAndClamp(parseFloat(document.getElementById('initN').value)||16, N_MIN, N_MAX);
+        initS = snapToGridAndClamp(parseFloat(document.getElementById('initS').value)||11, S_MIN, S_MAX);
+        initB = snapToGridAndClamp(parseFloat(document.getElementById('initB').value)||6,  B_MIN, B_MAX);
+        document.getElementById('initN').value = initN;
+        document.getElementById('initS').value = initS;
+        document.getElementById('initB').value = initB;
+      }
+      decisionStep = 0;
+      epochParams = [{ noodle: initN, soap: initS, bag: initB }];
+      userDecisions = [];
+      records = genRecords();
+      renderDataTable();
+      renderAll();
+    }
+
+    // ====== Render：九筆資料 ======
+    function renderDataTable(){
+      const tb = records.map((r,i)=>
+        `<tr><td>${i+1}</td><td>${r.noodle}</td><td>${r.soap}</td><td>${r.total.toFixed(1)}</td></tr>`
+      ).join('');
+      document.getElementById('dataTable').innerHTML = tb;
+    }
+
+    // ====== Render：LR 表 ======
+    function renderLRList(){
+      const lr = buildLRList();
+      const html = lr.map((eta,i)=>`e${i+1}:${eta}`).join(' | ');
+      document.getElementById('lrList').textContent = html;
+    }
+
+    // ====== Render：每個 epoch 區塊 ======
+    function renderEpochBlocks(){
+      const lastVisible = Math.min(decisionStep, epochs-1);
+      let html = '';
+      for(let epoch=0; epoch<=lastVisible; epoch++){
+        const base = {...epochParams[epoch]};
+        const err0 = mae(base.noodle, base.soap, base.bag);
+
+        // 單參數觀察（只能 +0.5）
+        const n_up = snapToGridAndClamp(base.noodle + STEP, N_MIN, N_MAX);
+        const s_up = snapToGridAndClamp(base.soap   + STEP, S_MIN, S_MAX);
+        const b_up = snapToGridAndClamp(base.bag    + STEP, B_MIN, B_MAX);
+
+        const err_n = mae(n_up, base.soap, base.bag);
+        const err_s = mae(base.noodle, s_up, base.bag);
+        const err_b = mae(base.noodle, base.soap, b_up);
+
+        const d_n = err_n - err0, d_s = err_s - err0, d_b = err_b - err0;
+        const cls = d => d<0?'delta-pos':(d>0?'delta-neg':'delta-zero');
+        const fmt = d => (d>0?'+':'') + d.toFixed(4);
+
+        html += `
+        <div class="epoch-block" id="epoch_${epoch}">
+          <div class="mono gray">Epoch ${epoch+1}</div>
+          <table>
+            <tr>
+              <td class="gray">目前猜測</td>
+              <td class="mono">${base.noodle}</td>
+              <td class="mono">${base.soap}</td>
+              <td class="mono">${base.bag}</td>
+              <td class="mono">${err0.toFixed(4)}</td>
+            </tr>
+            <tr class="step-row">
+              <td>單參數觀察（僅 +0.5）</td>
+              <td class="mono">${n_up}</td>
+              <td class="mono">${s_up}</td>
+              <td class="mono">${b_up}</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>總誤差（MAE）</td>
+              <td class="mono">${err_n.toFixed(4)}</td>
+              <td class="mono">${err_s.toFixed(4)}</td>
+              <td class="mono">${err_b.toFixed(4)}</td>
+              <td></td>
+            </tr>
+            <tr>
+              <td>誤差變化 ΔErr</td>
+              <td class="mono ${cls(d_n)}">ΔErrₙ=${fmt(d_n)}</td>
+              <td class="mono ${cls(d_s)}">ΔErrₛ=${fmt(d_s)}</td>
+              <td class="mono ${cls(d_b)}">ΔErrᵦ=${fmt(d_b)}</td>
+              <td></td>
+            </tr>
+          </table>
+        </div>`;
+      }
+      document.getElementById('epochContainer').innerHTML = html;
+    }
+
+    // ====== Render：決策區（手動/自動，一鍵送出、沿用模式、capUnits ceil） ======
+    function renderDecisionArea(){
+      let box = document.getElementById('decisionInputs');
+      if(decisionStep <= epochs){
+        const e = decisionStep;
+        const isFinal = (decisionStep === epochs);
+        const base = {...epochParams[e]};
+        const eta = lrAtEpoch(Math.min(e+1, epochs), epochs);
+        const maxUnits = maxUnitsForEpoch(e+1, epochs);
+        // v5.1/v5.2：ceil + 保底 1（避免 round→0）
+        const capUnits = Math.max(1, Math.min(maxUnits, Math.ceil(eta * maxUnits * ALPHA)));
+
+        const last = userDecisions[e] || {};
+        const title = isFinal
+          ? `請輸入你的「最終答案」（第 ${epochs+1} 次決策）`
+          : `請根據上面觀察，決定第 ${e+1} 組三參數（將成為下一個 epoch 的起始）`;
+
+        box.innerHTML = `
+          <div class="section-title">${title}</div>
+          <div class="mono small gray">本輪 η = ${eta.toFixed(4)}；策略上限 = ${maxUnits} 格；η裁剪上限 = <b>${capUnits}</b> 格（每格 0.5）</div>
+          <div class="epoch-block">
+            <div style="margin-bottom:8px;">
+              <label><input type="radio" name="mode" value="manual"> 手動</label>
+              <label style="margin-left:12px;"><input type="radio" name="mode" value="auto"> 自動（依 ΔErr 方向，1→${capUnits} 格連鎖步進）</label>
+              <button class="btn" id="applyAutoBtn" style="margin-left:12px;" disabled>套用自動建議</button>
+              <button class="btn" id="applyAndSubmitBtn" style="margin-left:8px;" disabled>套用並送出</button>
+            </div>
+            <table>
+              <tr><td>王子麵</td><td>香皂</td><td>塑膠袋</td><td></td></tr>
+              <tr>
+                <td><input id="decN" type="number" step="0.5" min="${N_MIN}" max="${N_MAX}" value="${last.noodle??base.noodle}"></td>
+                <td><input id="decS" type="number" step="0.5" min="${S_MIN}" max="${S_MAX}" value="${last.soap??base.soap}"></td>
+                <td><input id="decB" type="number" step="0.5" min="${B_MIN}" max="${B_MAX}"  value="${last.bag??base.bag}"></td>
+                <td><button class="btn" id="submitBtn">送出</button></td>
+              </tr>
+            </table>
+          </div>
+        `;
+
+        // —— 持續 Auto 模式：沿用上一輪設定（預設 auto）——
+        const radios = box.querySelectorAll('input[name="mode"]');
+        const lastMode = (userDecisions[e]?.mode) || (userDecisions[e-1]?.mode) || "auto";
+        radios.forEach(r => { r.checked = (r.value === lastMode); });
+
+        const applyAutoBtn = document.getElementById('applyAutoBtn');
+        const applyAndSubmitBtn = document.getElementById('applyAndSubmitBtn');
+        function syncButtons() {
+          const isAuto = document.querySelector('input[name="mode"]:checked').value === 'auto';
+          applyAutoBtn.disabled = !isAuto;
+          applyAndSubmitBtn.disabled = !isAuto;
+        }
+        radios.forEach(r => r.addEventListener('change', syncButtons));
+        syncButtons();
+
+        applyAutoBtn.addEventListener('click', ()=>applyAutoSuggestion(e, capUnits));
+        applyAndSubmitBtn.addEventListener('click', ()=>{
+          applyAutoSuggestion(e, capUnits);
+          submitDecision("auto");
+        });
+        document.getElementById('submitBtn').addEventListener('click', ()=>{
+          const mode = document.querySelector('input[name="mode"]:checked').value;
+          submitDecision(mode);
+        });
+
+      } else {
+        document.getElementById('decisionInputs').innerHTML = '';
+      }
+    }
+
+    // ====== Auto 連鎖步進：每參數 1..capUnits 試到最好 ======
+    function applyAutoSuggestion(epochIndex, capUnits){
+      const base = {...epochParams[epochIndex]};
+      const err0 = mae(base.noodle, base.soap, base.bag);
+
+      // ΔErr（+0.5 前向差分）
+      const d_n = mae(snapToGridAndClamp(base.noodle+STEP,N_MIN,N_MAX), base.soap, base.bag) - err0;
+      const d_s = mae(base.noodle, snapToGridAndClamp(base.soap+STEP,S_MIN,S_MAX), base.bag) - err0;
+      const d_b = mae(base.noodle, base.soap, snapToGridAndClamp(base.bag+STEP,B_MIN,B_MAX)) - err0;
+
+      const dir = d => (d<0 ? 1 : (d>0 ? -1 : 0)); // 方向
+      const tryBest = (value, d, min, max) => {
+        const direction = dir(d);
+        if(direction===0) return value; // 不動
+        let bestVal = value;
+        let bestMae = err0;
+        for(let u=1; u<=capUnits; u++){
+          const candidate = snapToGridAndClamp(value + direction*u*STEP, min, max);
+          const m = mae(
+            (min===N_MIN && max===N_MAX)? candidate : base.noodle,
+            (min===S_MIN && max===S_MAX)? candidate : base.soap,
+            (min===B_MIN && max===B_MAX)? candidate : base.bag
+          );
+          if(m < bestMae - 1e-12){
+            bestMae = m;
+            bestVal = candidate;
+          }
+          if(candidate===min || candidate===max) break;
+        }
+        return bestVal;
+      };
+
+      const n2 = tryBest(base.noodle, d_n, N_MIN, N_MAX);
+      const s2 = tryBest(base.soap,   d_s, S_MIN, S_MAX);
+      const b2 = tryBest(base.bag,    d_b, B_MIN, B_MAX);
+
+      document.getElementById('decN').value = n2;
+      document.getElementById('decS').value = s2;
+      document.getElementById('decB').value = b2;
+    }
+
+    // ====== 提交決策（強制寫入下一輪起始，紀錄模式，debug log） ======
+    function submitDecision(mode="manual"){
+      const n = snapToGridAndClamp(parseFloat(document.getElementById('decN').value), N_MIN, N_MAX);
+      const s = snapToGridAndClamp(parseFloat(document.getElementById('decS').value), S_MIN, S_MAX);
+      const b = snapToGridAndClamp(parseFloat(document.getElementById('decB').value), B_MIN, B_MAX);
+      if(isNaN(n)||isNaN(s)||isNaN(b)){ alert('請輸入合法數值'); return; }
+
+      userDecisions[decisionStep] = { noodle:n, soap:s, bag:b, mode };
+
+      if(decisionStep < epochs){
+        epochParams[decisionStep+1] = { noodle:n, soap:s, bag:b }; // 無條件寫入
+      }
+
+      try {
+        console.log("[submitDecision] step=", decisionStep,
+          "write next-start=", epochParams[decisionStep+1],
+          "mode=", mode);
+      } catch(e){}
+
+      decisionStep++;
+      renderAll();
+    }
+
+    // ====== 最終答案 ======
+    function renderFinal(){
+      const ok = (decisionStep > epochs);
+      const box = document.getElementById('finalAns');
+      if(!ok){ box.innerHTML=''; return; }
+      const last = userDecisions[epochs];
+      const maeLast = mae(last.noodle, last.soap, last.bag);
+      const maeTruth = mae(truth.noodle, truth.soap, truth.bag);
+
+      box.innerHTML = `
+        <div><b>正確答案：</b>
+          王子麵 <span class="mono">${truth.noodle}</span> 元，
+          香皂 <span class="mono">${truth.soap}</span> 元，
+          塑膠袋 <span class="mono">${truth.bag}</span> 元
+        </div>
+        <div style="margin-top:6px;"><b>你最後一次猜測：</b>
+          王子麵 <span class="mono">${last.noodle}</span> 元，
+          香皂 <span class="mono">${last.soap}</span> 元，
+          塑膠袋 <span class="mono">${last.bag}</span> 元
+        </div>
+        <div class="mono small gray" style="margin-top:6px;">
+          你的最終 MAE：${maeLast.toFixed(4)}；以真值計算的 MAE：${maeTruth.toFixed(4)}
+        </div>
+      `;
+    }
+
+    // ====== Render All ======
+    function renderAll(){
+      renderLRList();
+      renderEpochBlocks();
+      renderDecisionArea();
+      renderFinal();
+    }
+
+    // ====== 事件：套用 Epochs / 重置 ======
+    document.getElementById('applyEpochsBtn').addEventListener('click', ()=>{
+      const v = Math.max(3, Math.min(50, Math.round(parseFloat(document.getElementById('epochsInput').value)||20)));
+      epochs = v;
+      resetExperiment(true);
+    });
+    document.getElementById('applyInitBtn').addEventListener('click', ()=>{
+      resetExperiment(true);
+    });
+    document.getElementById('resetBtn').addEventListener('click', ()=>{
+      resetExperiment(true);
+    });
+
+    // ====== 啟動 ======
+    (function init(){
+      resetExperiment(true);
+    })();
+  </script>
+</body>
+</html>
